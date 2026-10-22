@@ -23,19 +23,29 @@ if (configured) {
   db = getFirestore(app);
 }
 
-const EMOJIS = ["😊", "😴", "🚗", "💼", "🍽️", "🎉", "😔", "❤️", "📚", "🏠", "🏋️", "🤒"];
+const TAGS = ["Free", "At work", "Driving", "Eating", "Resting", "Studying", "Out", "Busy"];
+const svg = (d) => `<svg class="i" aria-hidden="true" viewBox="0 0 24 24">${d}</svg>`;
+const ICON = {
+  home: svg('<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>'),
+  plan: svg('<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>'),
+  cycle: svg('<path d="M12 3c3.5 4.2 6 7.2 6 10.5A6 6 0 0 1 6 13.5C6 10.2 8.5 7.2 12 3z"/>'),
+  dates: svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'),
+  notes: svg('<path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-4 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>'),
+  settings: svg('<path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/>'),
+  trash: svg('<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5"/>'),
+};
 const TABS = [
-  ["home", "🏠", "Home"],
-  ["plan", "🗓️", "Plan"],
-  ["cycle", "🩸", "Cycle"],
-  ["dates", "🎉", "Dates"],
-  ["notes", "💭", "Notes"],
+  ["home", ICON.home, "Home"],
+  ["plan", ICON.plan, "Plan"],
+  ["cycle", ICON.cycle, "Cycle"],
+  ["dates", ICON.dates, "Dates"],
+  ["notes", ICON.notes, "Notes"],
 ];
 
 const S = {
   uid: null, name: "", email: "", cid: null, couple: null, partnerUid: null,
   people: {}, schedule: [], events: [], thoughts: [], cycle: {}, pcErr: false,
-  tab: "home", weekOff: 0, schedDate: L.ymd(L.today()), pendingEmoji: null,
+  tab: "home", weekOff: 0, schedDate: L.ymd(L.today()), pendingTag: null,
   authMode: "signin", settings: false, lastLoc: 0, unsubs: [], pcUnsub: null,
 };
 
@@ -75,20 +85,20 @@ const root = () => $("#app");
 
 function screenSetup() {
   root().innerHTML = `<div class="center"><div class="card narrow">
-    <h1>Almost there 🔧</h1>
+    <h1>Almost there</h1>
     <p>The app is online, but it isn't connected to your Firebase project yet.</p>
     <p class="muted">Open <b>firebase-config.js</b> on GitHub, paste your Firebase settings into it, and save. Then refresh this page.</p>
   </div></div>`;
 }
 
 function screenLoading() {
-  root().innerHTML = `<div class="center"><div class="heart">💞</div></div>`;
+  root().innerHTML = `<div class="center"><div class="brand">${ICON.dates}</div></div>`;
 }
 
 function screenAuth() {
   const up = S.authMode === "signup";
   root().innerHTML = `<div class="center"><div class="card narrow">
-    <div class="heart">💞</div>
+    <div class="brand">${ICON.dates}</div>
     <h1>Us</h1>
     <p class="muted">A small private space for the two of you.</p>
     <form data-form="auth" autocomplete="on">
@@ -104,16 +114,16 @@ function screenAuth() {
 function screenPair() {
   root().innerHTML = `<div class="center"><div class="stack narrow">
     <div class="card">
-      <h2>Hi ${esc(S.name || "there")} 👋</h2>
+      <h2>Hi ${esc(S.name || "there")}</h2>
       <p class="muted">One of you starts the space, the other joins with a code.</p>
     </div>
     <div class="card">
-      <h3>✨ Start our space</h3>
+      <h3>Start our space</h3>
       <p class="muted">You'll get an 8-letter code to send to your partner.</p>
       <button class="btn primary" data-act="createCouple">Create our space</button>
     </div>
     <div class="card">
-      <h3>🔑 Join with a code</h3>
+      <h3>Join with a code</h3>
       <form data-form="join">
         <label>Code from your partner<input id="jCode" name="code" required maxlength="12" autocapitalize="characters" autocomplete="off"></label>
         <button class="btn" type="submit">Join</button>
@@ -125,10 +135,10 @@ function screenPair() {
 
 function renderShell() {
   root().innerHTML = `
-    <header class="top"><b>Us 💞</b><button class="icon" data-act="settings" aria-label="Settings">⚙️</button></header>
+    <header class="top"><span>Us</span><button class="icon round" data-act="settings" aria-label="Settings">${ICON.settings}</button></header>
     <main id="view"></main>
     <nav class="tabs">${TABS.map(([k, ic, lb]) =>
-      `<button data-act="tab" data-id="${k}" class="${S.tab === k ? "on" : ""}"><span>${ic}</span>${lb}</button>`).join("")}</nav>
+      `<button data-act="tab" data-id="${k}" aria-label="${lb}" class="${S.tab === k ? "on" : ""}">${ic}<span class="lb">${lb}</span></button>`).join("")}</nav>
     <div id="sheet"></div>`;
   renderView(true);
 }
@@ -175,7 +185,7 @@ function renderSheet() {
     <h3>Settings</h3>
     <p class="muted">Signed in as ${esc(S.email)}</p>
     ${code ? `<p>Our code: <b class="code">${esc(code)}</b></p>` : ""}
-    <p class="muted small">Install on your phone: Android Chrome → ⋮ → <i>Add to Home screen</i>. iPhone Safari → Share → <i>Add to Home Screen</i>.</p>
+    <p class="muted small">Install on your phone: Android Chrome, menu, <i>Add to Home screen</i>. iPhone Safari, Share, <i>Add to Home Screen</i>.</p>
     <button class="btn" data-act="signout">Sign out</button>
     <button class="link" data-act="closeSettings">Close</button>
   </div></div>`;
@@ -184,31 +194,31 @@ function renderSheet() {
 // ---- Home
 function locBlock(uid, isMe) {
   const p = S.people[uid] || {};
-  if (!p.sharing) return `<p class="muted">📍 ${isMe ? "Location sharing is off" : "Location is not being shared"}</p>`;
-  if (!p.location) return `<p class="muted">📍 Waiting for the first location…</p>`;
+  if (!p.sharing) return `<p class="muted small">${isMe ? "Location sharing is off" : "Location is not being shared"}</p>`;
+  if (!p.location) return `<p class="muted small">Waiting for the first location…</p>`;
   const { lat, lng, at } = p.location;
-  let extra = "";
+  let extra = "", dist = "";
   if (!isMe) {
     const mine = S.people[S.uid]?.location;
     if (mine && S.people[S.uid]?.sharing) {
-      extra = `<p class="chip">${L.fmtDistance(L.haversineKm(mine, p.location))} away from you</p>`;
+      dist = `<span class="chip">${L.fmtDistance(L.haversineKm(mine, p.location))} away from you</span>`;
     }
     const bbox = [lng - 0.008, lat - 0.005, lng + 0.008, lat + 0.005].join("%2C");
     extra += `<iframe class="map" loading="lazy" title="Map" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}"></iframe>
-      <a class="small" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${lat},${lng}">Open in Maps ↗</a>`;
+      <a class="small" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${lat},${lng}">Open in Maps</a>`;
   }
-  return `<p class="muted">📍 Last seen ${L.timeAgo(at)}</p>${extra}`;
+  return `<div class="locline"><span>Last seen ${L.timeAgo(at)}</span>${dist}</div>${extra}`;
 }
 
 function personCard(uid, isMe) {
   const p = S.people[uid] || {};
   const st = p.status || {};
-  const line = st.emoji || st.text ? `${esc(st.emoji || "")} ${esc(st.text || "")}` : "No status yet";
+  const line = st.text || st.tag ? esc(st.text || st.tag) : "No status yet";
   return `<section class="card">
     <div class="row"><div class="avatar ${isMe ? "me" : ""}">${esc((p.name || "?")[0].toUpperCase())}</div>
-      <div class="grow"><b>${isMe ? "You" : esc(p.name || "Partner")}</b>
-      <div class="status">${line}</div>
-      ${st.at ? `<div class="muted small">updated ${L.timeAgo(st.at)}</div>` : ""}</div></div>
+      <div class="grow"><div class="who">${isMe ? "You" : esc(p.name || "Partner")}</div>
+      <div class="status">${line}</div></div>
+      ${st.at ? `<div class="muted small">${L.timeAgo(st.at)}</div>` : ""}</div>
     ${locBlock(uid, isMe)}
   </section>`;
 }
@@ -216,9 +226,9 @@ function personCard(uid, isMe) {
 function homeView() {
   const me = S.people[S.uid] || {};
   const waiting = !S.partnerUid;
-  const sel = S.pendingEmoji ?? me.status?.emoji ?? "";
+  const sel = S.pendingTag ?? me.status?.tag ?? "";
   return `
-    ${waiting ? `<section class="card banner"><b>Waiting for your partner 💌</b>
+    ${waiting ? `<section class="card banner"><b>Waiting for your partner</b>
       <p>Send them this code. They sign up, choose <i>Join with a code</i> and enter it.</p>
       <div class="code big">${esc(S.couple?.code || "…")}</div>
       <div class="row gap"><button class="btn" data-act="shareCode">Share</button><button class="btn" data-act="copyCode">Copy</button></div></section>` : ""}
@@ -226,14 +236,13 @@ function homeView() {
     ${personCard(S.uid, true)}
     <section class="card">
       <h3>Update my status</h3>
-      <div class="emojis">${EMOJIS.map((e) => `<button type="button" class="emo ${sel === e ? "on" : ""}" data-act="pickEmoji" data-id="${e}">${e}</button>`).join("")}</div>
+      <div class="tags">${TAGS.map((e) => `<button type="button" class="tag ${sel === e ? "on" : ""}" aria-pressed="${sel === e}" data-act="pickTag" data-id="${e}">${e}</button>`).join("")}</div>
       <form data-form="status" class="row gap">
-        <input id="stText" name="text" class="grow" maxlength="80" placeholder="What's up? (e.g. On my way home)" value="${esc(me.status?.text || "")}">
+        <input id="stText" name="text" class="grow" maxlength="80" placeholder="What's up? e.g. On my way home" value="${esc(me.status?.text || "")}">
         <button class="btn primary" type="submit">Save</button>
       </form>
     </section>
     <section class="card">
-      <h3>My location</h3>
       <label class="switch"><input type="checkbox" data-change="locShare" ${me.sharing ? "checked" : ""}><span>Share my location while the app is open</span></label>
       <p class="muted small">Updates whenever you open the app. Switch off any time to pause.</p>
       ${me.sharing ? `<button class="btn" data-act="updateLoc">Update now</button>` : ""}
@@ -256,7 +265,7 @@ function planView() {
     .map((b) => `<li class="item ${b.owner === S.uid ? "mine" : "theirs"}">
       <div class="time">${b.start ? esc(b.start) + (b.end ? "–" + esc(b.end) : "") : "All day"}</div>
       <div class="grow"><b>${esc(b.title)}</b><div class="muted small">${esc(nameOf(b.owner))}${b.repeat === "weekly" ? " · every week" : ""}</div></div>
-      ${b.owner === S.uid ? `<button class="icon" data-act="delSched" data-id="${esc(b.id)}" aria-label="Delete">🗑️</button>` : ""}</li>`).join("");
+      ${b.owner === S.uid ? `<button class="icon" data-act="delSched" data-id="${esc(b.id)}" aria-label="Delete">${ICON.trash}</button>` : ""}</li>`).join("");
   return `
     <section class="card">
       <div class="row"><button class="icon" data-act="weekPrev" aria-label="Earlier">‹</button>
@@ -291,11 +300,11 @@ function cycleCard(uid, isMe) {
   else if (info.future) body = `<p class="muted">The last start date is in the future. Please check it.</p>`;
   else {
     body = `<div class="bigstat">${info.inPeriod
-      ? `🩸 Period days<small>day ${info.dayOfCycle} of about ${info.periodLen}</small>`
+      ? `Period days<small>day ${info.dayOfCycle} of about ${info.periodLen}</small>`
       : `${info.daysToNext}<small>${info.daysToNext === 1 ? "day" : "days"} to next period · ${fmtDate(info.nextStart)}</small>`}</div>
       <p class="muted">Day ${info.dayOfCycle} of a ${info.cycleLen}-day cycle</p>
       <p class="small"><b>Next three:</b> ${info.upcoming.map(fmtDate).join(" · ")}</p>
-      ${info.stale ? `<p class="muted small">⚠️ The last logged start is a while ago. Log the latest one for better estimates.</p>` : ""}`;
+      ${info.stale ? `<p class="muted small">The last logged start is a while ago. Log the latest one for better estimates.</p>` : ""}`;
   }
   const form = isMe ? `
     <hr>
@@ -315,16 +324,16 @@ function cycleView() {
 }
 
 // ---- Dates (events)
-const EVENT_TYPES = { anniversary: "💍 Anniversary", birthday: "🎂 Birthday", date: "🍷 Date night", trip: "✈️ Trip", other: "⭐ Other" };
+const EVENT_TYPES = { anniversary: "Anniversary", birthday: "Birthday", date: "Date night", trip: "Trip", other: "Other" };
 
 function datesView() {
   const list = S.events.map((e) => ({ e, o: L.nextOccurrence(e.date, !!e.yearly) })).sort((a, b) => a.o.days - b.o.days);
   const up = list.filter((x) => x.o.days >= 0);
   const past = list.filter((x) => x.o.days < 0).reverse();
   const row = ({ e, o }) => `<li class="item">
-    <div class="time">${esc((EVENT_TYPES[e.type] || EVENT_TYPES.other).split(" ")[0])}</div>
-    <div class="grow"><b>${esc(e.title)}</b><div class="muted small">${fmtDate(o.date)}${e.yearly ? " · every year" : ""} · ${L.countdownText(o.days)}</div></div>
-    <button class="icon" data-act="delEvent" data-id="${esc(e.id)}" aria-label="Delete">🗑️</button></li>`;
+    <div class="datetile"><b>${o.date.getDate()}</b>${o.date.toLocaleDateString("en-IN", { month: "short" })}</div>
+    <div class="grow"><b>${esc(e.title)}</b><div class="muted small">${esc(EVENT_TYPES[e.type] || EVENT_TYPES.other)} · ${fmtDate(o.date)}${e.yearly ? " · every year" : ""} · ${L.countdownText(o.days)}</div></div>
+    <button class="icon" data-act="delEvent" data-id="${esc(e.id)}" aria-label="Delete">${ICON.trash}</button></li>`;
   return `
     <section class="card"><h3>Coming up</h3><ul class="list">${up.map(row).join("") || `<li class="empty">No upcoming dates yet.</li>`}</ul></section>
     <section class="card">
@@ -343,14 +352,14 @@ function datesView() {
 // ---- Notes
 function notesView() {
   const items = S.thoughts.map((t) => `<li class="note ${t.author === S.uid ? "mine" : ""}">
-    <div class="muted small">${t.kind === "idea" ? "💡 Idea" : "💭 Thought"} · ${esc(nameOf(t.author))} · ${L.timeAgo(t.createdAt)}</div>
+    <div class="muted small">${t.kind === "idea" ? "Idea" : "Thought"} · ${esc(nameOf(t.author))} · ${L.timeAgo(t.createdAt)}</div>
     <p>${esc(t.text)}</p>
-    ${t.author === S.uid ? `<button class="icon small" data-act="delThought" data-id="${esc(t.id)}" aria-label="Delete">🗑️</button>` : ""}</li>`).join("");
+    ${t.author === S.uid ? `<button class="icon small" data-act="delThought" data-id="${esc(t.id)}" aria-label="Delete">${ICON.trash}</button>` : ""}</li>`).join("");
   return `
     <section class="card">
       <form data-form="thought">
         <label>Share something<textarea id="tText" name="text" rows="3" required maxlength="600" placeholder="A thought, a plan, an idea…"></textarea></label>
-        <div class="row gap"><select id="tKind" name="kind" class="grow"><option value="thought">💭 Thought</option><option value="idea">💡 Idea</option></select>
+        <div class="row gap"><select id="tKind" name="kind" class="grow"><option value="thought">Thought</option><option value="idea">Idea</option></select>
           <button class="btn primary" type="submit">Post</button></div>
       </form>
     </section>
@@ -445,7 +454,7 @@ const actions = {
   settings() { S.settings = true; renderSheet(); },
   closeSettings() { S.settings = false; renderSheet(); },
   async signout() { S.settings = false; stopSession(); await signOut(auth); },
-  pickEmoji(el, id) { S.pendingEmoji = S.pendingEmoji === id ? "" : id; renderView(); },
+  pickTag(el, id) { S.pendingTag = S.pendingTag === id ? "" : id; renderView(); },
   async updateLoc() { await maybeUpdateLocation(true); },
   pickDay(el, id) { S.schedDate = id; renderView(true); },
   weekPrev() { S.weekOff -= 1; renderView(); },
@@ -458,7 +467,7 @@ const actions = {
   },
   async shareCode() {
     const code = S.couple?.code || "";
-    const text = `Join me on our little app 💞 Sign up, choose "Join with a code" and enter: ${code}\n${location.origin}${location.pathname}`;
+    const text = `Join me on our little app. Sign up, choose "Join with a code" and enter: ${code}\n${location.origin}${location.pathname}`;
     if (navigator.share) { try { await navigator.share({ text }); } catch { /* cancelled */ } }
     else { await navigator.clipboard.writeText(text).catch(() => {}); toast("Invite message copied"); }
   },
@@ -498,9 +507,9 @@ const forms = {
   },
   async status(f, fd) {
     const me = S.people[S.uid] || {};
-    const emoji = S.pendingEmoji ?? me.status?.emoji ?? "";
-    await setDoc(personDoc(), { status: { emoji, text: fd.get("text").trim(), at: Date.now() } }, { merge: true });
-    S.pendingEmoji = null;
+    const tag = S.pendingTag ?? me.status?.tag ?? "";
+    await setDoc(personDoc(), { status: { tag, text: fd.get("text").trim(), at: Date.now() } }, { merge: true });
+    S.pendingTag = null;
     toast("Status updated");
   },
   async sched(f, fd) {
