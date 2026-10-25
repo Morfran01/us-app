@@ -112,3 +112,30 @@ export function makeCode(len = 8) {
   globalThis.crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
 }
+
+// ---- Memories ---------------------------------------------------------
+// How many whole years ago this date was, if it falls on today's day and month (else 0).
+// A 29 Feb memory shows on 28 Feb in non-leap years.
+export function yearsAgoToday(dateStr, now = today()) {
+  if (!dateStr) return 0;
+  const d = parseYmd(dateStr);
+  const years = now.getFullYear() - d.getFullYear();
+  if (years < 1) return 0;
+  const leap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  let m = d.getMonth(), day = d.getDate();
+  if (m === 1 && day === 29 && !leap(now.getFullYear())) day = 28;
+  return m === now.getMonth() && day === now.getDate() ? years : 0;
+}
+
+// ---- Images -----------------------------------------------------------
+// Shrink (w,h) to fit inside a max x max box, keeping the shape. Never enlarges.
+export function fitSize(w, h, max) {
+  if (!w || !h) return { w: 0, h: 0 };
+  const k = Math.min(1, max / Math.max(w, h));
+  return { w: Math.round(w * k), h: Math.round(h * k) };
+}
+
+// ---- Theme ------------------------------------------------------------
+// pref: "brown" | "panda" | "auto"; prefersDark: boolean from the phone setting
+export const resolveTheme = (pref, prefersDark) =>
+  pref === "brown" || pref === "panda" ? pref : prefersDark ? "brown" : "panda";
