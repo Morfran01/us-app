@@ -1,6 +1,8 @@
-# Us: a small private app for two
+# Bear: a small private app for two
 
-Location (while the app is open), status, schedule, cycle dates, special dates and shared notes.
+Location (while the app is open), status, schedule, cycle dates, special dates, shared notes, a 30-photo board,
+memories that come back on the same day each year, profile photos and an "I thought about you" button.
+Two looks: Brownie Bear (dark) and Panda Bear (light), switchable from the top of the Home screen.
 Runs as a website on GitHub Pages, with a free Firebase project as the shared whiteboard.
 
 ## Files
@@ -32,3 +34,13 @@ Runs as a website on GitHub Pages, with a free Firebase project as the shared wh
 - The cycle section is an estimate from past dates, not medical advice. The owner decides whether the partner can see it.
 - The website address is public, but nobody can see any data without signing in as one of the two of you.
 - Never put passwords or secret keys in the code files. The Firebase config values are fine to be public.
+
+## Updating to Bear (new features)
+
+Photos, memories and the "I thought about you" button use three new parts of the database.
+Copy the whole of `firestore.rules` into Firebase → Firestore Database → **Rules** → **Publish** again,
+otherwise those features show a "need the new database rules" message.
+
+- Photos are shrunk on the phone before saving (about 100–300 KB each), so 30 of them fit easily in the free plan.
+- "I thought about you" shows up instantly if the other phone has Bear open, or as a card the next time it's opened.
+  Lock-screen notifications would need Firebase's pay-as-you-go plan, so they are not switched on.
