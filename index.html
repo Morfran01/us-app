@@ -1,19 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="brown">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Us</title>
-  <meta name="theme-color" content="#F3F5F2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0F1512" media="(prefers-color-scheme: dark)">
+  <title>Bear</title>
+  <meta name="theme-color" content="#2A1A0F">
   <meta name="color-scheme" content="light dark">
+  <script>
+    // Pick the look before anything draws, so there's no flash of the wrong colours.
+    (function () {
+      var pref = "auto";
+      try { pref = localStorage.getItem("bear-theme") || "auto"; } catch (e) {}
+      var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var t = pref === "brown" || pref === "panda" ? pref : dark ? "brown" : "panda";
+      document.documentElement.setAttribute("data-theme", t);
+      if (t === "panda") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#F6DCE4");
+    })();
+  </script>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Us">
+  <meta name="apple-mobile-web-app-title" content="Bear">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
