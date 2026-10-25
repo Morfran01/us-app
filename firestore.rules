@@ -62,6 +62,26 @@ service cloud.firestore {
         allow create: if isMember(cid) && request.resource.data.author == request.auth.uid;
         allow update, delete: if isMember(cid) && resource.data.author == request.auth.uid;
       }
+
+      // Photo board: both can see; you add your own (small, pre-shrunk images); only the uploader deletes
+      match /photos/{id} {
+        allow read: if isMember(cid);
+        allow create: if isMember(cid) && request.resource.data.by == request.auth.uid
+          && request.resource.data.img is string && request.resource.data.img.size() < 900000;
+        allow update, delete: if isMember(cid) && resource.data.by == request.auth.uid;
+      }
+
+      // Memories: shared, either of you can add, edit or remove
+      match /memories/{id} {
+        allow read, write: if isMember(cid);
+      }
+
+      // "I thought about you" taps
+      match /pings/{id} {
+        allow read: if isMember(cid);
+        allow create: if isMember(cid) && request.resource.data.from == request.auth.uid;
+        allow delete: if isMember(cid);
+      }
     }
   }
 }
