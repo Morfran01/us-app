@@ -1,6 +1,6 @@
 // Tiny service worker: keeps a copy of the app files so it opens quickly and
 // still loads the screens if the connection drops. Live data always comes from Firebase.
-const CACHE = "us-app-v2";
+const CACHE = "bear-v3";
 const SHELL = [
   "./", "index.html", "style.css", "app.js", "logic.js", "firebase-config.js",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png",
